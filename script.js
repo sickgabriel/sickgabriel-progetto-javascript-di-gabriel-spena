@@ -1,26 +1,66 @@
 // CHIAVE per salvare il valore in localStorage
 const STORAGE_KEY = 'simpleCounterValue';
 
+// ************************************************************
+// 1. FUNZIONE DI UTILITÀ PER LA CREAZIONE DEGLI ELEMENTI (DRY)
+// ************************************************************
+
 /**
- * Funzione di utilità per caricare il valore iniziale del counter.
- * Tenta di recuperare il valore salvato in localStorage. Se non esiste, 
- * restituisce il valore di default 0.
- * @returns {number} Il valore iniziale del counter.
+ * Funzione di utilità per creare un elemento DOM con proprietà.
+ * Accorpa le chiamate document.createElement, assegnazione di id, class, text, e event listener (onClick).
+ * @param {string} type - Il tipo di elemento da creare (es. 'div', 'button').
+ * @param {object} props - Un oggetto contenente le proprietà da assegnare (id, className, textContent, onClick).
+ * @returns {HTMLElement} L'elemento DOM creato e configurato.
+ */
+function createElementWithProps(type, props = {}) {
+    const element = document.createElement(type);
+
+    // Itera sulle proprietà fornite nell'oggetto 'props'
+    for (const key in props) {
+        if (!props.hasOwnProperty(key)) continue;
+
+        const value = props[key];
+
+        switch (key) {
+            case 'id':
+                element.id = value;
+                break;
+            case 'className':
+                element.className = value;
+                break;
+            case 'textContent':
+                element.textContent = value;
+                break;
+            case 'onClick':
+                // Aggiunge l'event listener per gestire l'interazione
+                element.addEventListener('click', value);
+                break;
+            default:
+                // Per attributi generici non gestiti sopra
+                element.setAttribute(key, value);
+                break;
+        }
+    }
+    return element;
+}
+
+
+// ************************************************************
+// 2. LOGICA APPLICATIVA (Stato e Manipolazione)
+// ************************************************************
+
+/**
+ * Carica il valore del counter da localStorage o restituisce 0.
  */
 function getInitialCounterValue() {
-    // localStorage.getItem restituisce una stringa o null.
     const storedValue = localStorage.getItem(STORAGE_KEY);
-    
-    // Controlla se storedValue è presente e lo converte in intero (base 10).
-    // Se non è presente o non è un numero valido, ritorna 0.
     return storedValue ? parseInt(storedValue, 10) : 0;
 }
 
 /**
- * Funzione di utilità per salvare il valore attuale del counter in localStorage.
+ * Salva il valore attuale del counter in localStorage.
  */
 function saveCounterValue() {
-    // Salva il valore convertendolo in stringa (requisito di localStorage).
     localStorage.setItem(STORAGE_KEY, counter);
 }
 
@@ -29,8 +69,7 @@ let counter = getInitialCounterValue();
 
 
 /**
- * 1. Funzione per l'aggiornamento del DOM
- * Aggiorna il testo del valore del counter nella pagina.
+ * Aggiorna il testo del valore del counter nel DOM.
  */
 function updateDisplay() {
     const valueElement = document.getElementById('counter-value');
@@ -40,55 +79,62 @@ function updateDisplay() {
 }
 
 /**
- * 2. Funzioni per la manipolazione del valore
- * Incrementano/Decrementano il valore, aggiornano il display e salvano il valore.
+ * Funzione per l'incremento.
  */
 function incrementCounter() {
     counter++;
     updateDisplay();
-    saveCounterValue(); 
-}
-
-function decrementCounter() {
-    counter--;
-    updateDisplay();
-    saveCounterValue(); 
+    saveCounterValue();
 }
 
 /**
- * 3. Funzione per la creazione dinamica dell'interfaccia (Manipolazione del DOM)
+ * Funzione per il decremento.
  */
+function decrementCounter() {
+    counter--;
+    updateDisplay();
+    saveCounterValue();
+}
+
+
+// ************************************************************
+// 3. CREAZIONE DELL'INTERFACCIA (Usa la funzione DRY)
+// ************************************************************
+
 function createCounterInterface() {
-    // 1. Seleziona il contenitore principale
     const appContainer = document.getElementById('app');
 
-    // 2. Crea il contenitore del counter
-    const counterContainer = document.createElement('div');
-    counterContainer.id = 'counter-container';
+    // Crea il contenitore principale del counter
+    const counterContainer = createElementWithProps('div', {
+        id: 'counter-container'
+    });
 
-    // 3. Crea l'elemento per visualizzare il valore
-    const counterValue = document.createElement('div');
-    counterValue.id = 'counter-value';
-    // Imposta il valore iniziale CARICATO
-    counterValue.textContent = counter; 
+    // Crea l'elemento per visualizzare il valore
+    const counterValue = createElementWithProps('div', {
+        id: 'counter-value',
+        textContent: counter // Imposta il valore iniziale CARICATO
+    });
 
-    // 4. Crea un contenitore per i pulsanti
-    const buttonsContainer = document.createElement('div');
-    buttonsContainer.className = 'buttons-container';
+    // Crea un contenitore per i pulsanti
+    const buttonsContainer = createElementWithProps('div', {
+        className: 'buttons-container'
+    });
 
-    // 5. Crea il pulsante di decremento (-)
-    const decrementBtn = document.createElement('button');
-    decrementBtn.id = 'decrement-btn';
-    decrementBtn.textContent = '−'; 
-    decrementBtn.addEventListener('click', decrementCounter); 
+    // Crea il pulsante di decremento (-)
+    const decrementBtn = createElementWithProps('button', {
+        id: 'decrement-btn',
+        textContent: '−',
+        onClick: decrementCounter 
+    });
 
-    // 6. Crea il pulsante di incremento (+)
-    const incrementBtn = document.createElement('button');
-    incrementBtn.id = 'increment-btn';
-    incrementBtn.textContent = '+'; 
-    incrementBtn.addEventListener('click', incrementCounter); 
+    // Crea il pulsante di incremento (+)
+    const incrementBtn = createElementWithProps('button', {
+        id: 'increment-btn',
+        textContent: '+',
+        onClick: incrementCounter
+    });
 
-    // 7. Assemblaggio degli elementi (append)
+    // Assemblaggio degli elementi (append)
     buttonsContainer.appendChild(decrementBtn);
     buttonsContainer.appendChild(incrementBtn);
 
@@ -98,5 +144,5 @@ function createCounterInterface() {
     appContainer.appendChild(counterContainer);
 }
 
-// Avvia l'interfaccia solo quando il DOM (incluso <div id="app">) è caricato.
+// Avvia l'interfaccia solo quando il DOM è caricato.
 document.addEventListener('DOMContentLoaded', createCounterInterface);
